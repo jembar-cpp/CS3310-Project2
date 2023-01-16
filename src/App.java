@@ -18,16 +18,41 @@ import java.util.stream.Stream;
 
 public class App {
     public static void main(String[] args) throws Exception {
-        System.out.printf("Using Quicksort with median of medians:\n");
-        for(int i = 1; i <= 10; i++) {
-            String filename = "data/data" + i + ".txt";
+        for(int i = 2; i <= 67108864; i*=2) {
+            generateListFile(i);
+            String filename = "data/list_size" + i + ".txt";
             int[][] data = generateListFromFile(filename);
             int[] list = data[0];
             int k = data[1][0];
-            System.out.printf("List %d: ", i);
-            System.out.println(Arrays.toString(list));
-            int result = quickSelectPartitionMM(list, 0, list.length - 1, k);
-            System.out.printf("Element %d: %d\n-----\n", k, result);
+            System.out.printf("----- List size %d -----\n", i);
+
+            float times[] = new float[12];
+
+            // Run 12 tests per list
+            for(int j = 1; j <= 12; j++) {
+                // Time the selection
+                long start = System.nanoTime();
+                int result = quickSelectPartitionMM(list.clone(), 0, list.length - 1, k);
+                long end = System.nanoTime();
+                long time = (end-start);
+                float time_ms = (float) time / 1000000;
+                System.out.printf("Test %d: %.5f ms.\n", j, time_ms);
+                times[j-1] = time_ms;
+            }
+
+            // Get the average time and cut the smallest and largest values
+            Arrays.sort(times);
+            float avg_time = 0;
+            for(int j = 1; j <= 10; j++) {
+                avg_time += times[j];
+            }
+            avg_time /= 10;
+            System.out.printf("Average time: %.5f ms.\n", avg_time);
+
+            // Write results to file
+            PrintWriter pw = new PrintWriter(new FileOutputStream(new File("results/quickselectpartitionmm.txt"), true));
+            pw.printf("Size %d: Average time %.5f ms.\n", i, avg_time);
+            pw.close();
         }
     }
 
@@ -235,7 +260,7 @@ public class App {
             return;
         }
         PrintWriter pw = new PrintWriter(filename, "UTF-8");
-        int k = (int) (Math.random() * n);
+        int k = (int) (Math.random() * n) + 1;
         pw.println(k);
         for (int i = 0; i < n; i++) {
             int randInt = (int) (Math.random() * 200) - 100;
